@@ -1,11 +1,13 @@
 version: 0.2
+
 phases:
-  install:
-    runtime-versions:
-      nodejs: 20
+  build:
     commands:
-      - cd backend && npm install
+      - echo "Empaquetando backend para Beanstalk"
+
 artifacts:
-  files:
-    - '**/*'
   base-directory: backend
+  files:
+    - server.js
+    - package.json
+    - 'public/**/*'

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calculadora de IMC</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F6F4EF; --ink:#20261F; --line:#D8D3C6;
+    --band-under:#4C7A5A; --band-normal:#2F5233; --band-over:#B4823A; --band-obese:#A6453A;
+    box-sizing:border-box;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;}
+  body{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
+  #root{min-height:100vh;display:flex;justify-content:center;padding:48px 20px 64px;}
+  .wrap{width:100%;max-width:560px;}
+  h1{font-family:'Fraunces',serif;font-weight:600;font-size:2.1rem;line-height:1.15;margin:0 0 6px;}
+  .sub{color:#5B6158;font-size:0.98rem;margin:0 0 36px;max-width:46ch;}
+  .field{margin-bottom:20px;}
+  label{display:block;font-size:0.85rem;color:#5B6158;margin-bottom:6px;}
+  .unit-row{display:flex;gap:10px;}
+  .unit-row input{flex:1;}
+  input[type=number]{
+    width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:6px;
+    background:#fff;font-size:1.05rem;color:var(--ink);font-family:'Inter',sans-serif;
+  }
+  input[type=number]:focus{outline:none;border-color:var(--band-normal);}
+  .toggle{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-bottom:28px;width:fit-content;}
+  .toggle button{
+    padding:9px 18px;border:none;background:#fff;color:#5B6158;font-size:0.88rem;
+    font-family:'Inter',sans-serif;cursor:pointer;
+  }
+  .toggle button.active{background:var(--band-normal);color:#fff;}
+  button.calc{
+    width:100%;padding:15px;background:var(--ink);color:#fff;border:none;border-radius:6px;
+    font-size:1rem;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;
+    transition:opacity .15s;
+  }
+  button.calc:hover{opacity:0.88;}
+  .result{margin-top:36px;padding-top:32px;border-top:1px solid var(--line);}
+  .imc-value{display:flex;align-items:baseline;gap:12px;margin-bottom:4px;}
+  .imc-num{font-family:'Fraunces',serif;font-size:3.4rem;font-weight:600;line-height:1;}
+  .imc-cat{font-size:1.05rem;font-weight:600;}
+  .scale{position:relative;height:8px;border-radius:4px;margin:22px 0 8px;
+    background:linear-gradient(to right,var(--band-under) 0 18.5%,var(--band-normal) 18.5% 40%,var(--band-over) 40% 55%,var(--band-obese) 55% 100%);}
+  .marker{position:absolute;top:-5px;width:3px;height:18px;background:var(--ink);border-radius:2px;transform:translateX(-50%);}
+  .scale-labels{display:flex;justify-content:space-between;font-size:0.72rem;color:#8A8F82;margin-bottom:28px;}
+  .rec{background:#fff;border:1px solid var(--line);border-radius:8px;padding:20px 22px;}
+  .rec h2{font-size:0.95rem;font-weight:600;margin:0 0 10px;}
+  .rec ul{margin:0;padding-left:18px;font-size:0.92rem;line-height:1.6;color:#3C4238;}
+  .rec li{margin-bottom:6px;}
+  .disclaimer{font-size:0.78rem;color:#8A8F82;margin-top:20px;line-height:1.5;}
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#1B1D19;--ink:#EDEAE0;--line:#3A3D35;
+    }
+    :root:not([data-theme="light"]) input[type=number],
+    :root:not([data-theme="light"]) .toggle button,
+    :root:not([data-theme="light"]) .rec{background:#252821;color:#EDEAE0;}
+    :root:not([data-theme="light"]) .sub, 
+    :root:not([data-theme="light"]) label,
+    :root:not([data-theme="light"]) .rec ul{color:#B7BAAF;}
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState} = React;
+
+function clasificar(imc){
+  if (imc < 18.5) return {cat:"Bajo peso", color:"var(--band-under)", pos: (imc/18.5)*18.5};
+  if (imc < 25) return {cat:"Peso normal", color:"var(--band-normal)"};
+  if (imc < 30) return {cat:"Sobrepeso", color:"var(--band-over)"};
+  return {cat:"Obesidad", color:"var(--band-obese)"};
+}
+
+function recomendaciones(imc){
+  if (imc < 18.5) return [
+    "Aumenta la ingesta calórica con alimentos densos en nutrientes: frutos secos, aguacate, legumbres y lácteos enteros.",
+    "Suma proteína en cada comida para favorecer la masa muscular.",
+    "Considera entrenamiento de fuerza en lugar de solo cardio intenso.",
+    "Consulta a un profesional de salud si el bajo peso persiste o hay pérdida involuntaria."
+  ];
+  if (imc < 25) return [
+    "Mantén una alimentación variada con predominio de vegetales, proteínas magras y granos integrales.",
+    "Realiza actividad física regular: al menos 150 minutos semanales de intensidad moderada.",
+    "Cuida el sueño y la hidratación, factores clave para sostener un peso saludable.",
+    "Haz chequeos médicos periódicos para monitorear tu bienestar general."
+  ];
+  if (imc < 30) return [
+    "Reduce gradualmente porciones y alimentos ultraprocesados, priorizando vegetales y proteína magra.",
+    "Incrementa la actividad física de forma progresiva: caminatas diarias, luego entrenamiento de fuerza.",
+    "Evita dietas extremas; los cambios sostenibles dan mejores resultados a largo plazo.",
+    "Habla con un profesional de salud para definir metas realistas."
+  ];
+  return [
+    "Consulta con un médico o nutricionista para un plan personalizado y seguro.",
+    "Prioriza cambios sostenibles en alimentación y actividad física antes que soluciones rápidas.",
+    "La actividad física de bajo impacto (caminar, nadar) es un buen punto de partida.",
+    "Evalúa junto a un profesional posibles condiciones asociadas (presión arterial, glucosa, etc.)."
+  ];
+}
+
+// Ruta relativa: funciona porque el mismo servidor Express sirve el frontend y la API
+const API_URL = "/api/imc";
+
+function App(){
+  const [sistema, setSistema] = useState("metrico");
+  const [peso, setPeso] = useState("");
+  const [altura, setAltura] = useState("");
+  const [pesoLb, setPesoLb] = useState("");
+  const [alturaFt, setAlturaFt] = useState("");
+  const [alturaIn, setAlturaIn] = useState("");
+  const [resultado, setResultado] = useState(null);
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState("");
+
+  const calcular = async () => {
+    // Normaliza todo a kg y cm, porque el backend (server.js) espera esas unidades
+    let pesoKg, alturaCm;
+    if (sistema === "metrico"){
+      pesoKg = parseFloat(peso);
+      alturaCm = parseFloat(altura);
+      if (!pesoKg || !alturaCm) return;
+    } else {
+      const p = parseFloat(pesoLb);
+      const ft = parseFloat(alturaFt) || 0;
+      const inch = parseFloat(alturaIn) || 0;
+      const totalIn = ft*12 + inch;
+      if (!p || !totalIn) return;
+      pesoKg = p * 0.453592;
+      alturaCm = totalIn * 2.54;
+    }
+
+    setCargando(true);
+    setError("");
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ peso: pesoKg, altura: alturaCm })
+      });
+      if (!res.ok) throw new Error("Respuesta no válida del servidor");
+      const data = await res.json(); // { imc, categoria, recomendaciones }
+
+      const imcNum = parseFloat(data.imc);
+      const {color} = clasificar(imcNum);
+      const clampedPos = Math.min(Math.max((imcNum-12)/(40-12)*100, 2), 98);
+      setResultado({
+        imc: data.imc,
+        cat: data.categoria,
+        color,
+        pos: clampedPos,
+        recs: data.recomendaciones
+      });
+    } catch (err) {
+      setError("No se pudo conectar con la API (" + API_URL + "). Verifica que el backend esté corriendo.");
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  return (
+    <div className="wrap">
+      <h1>Calculadora de IMC</h1>
+      <p className="sub">Calcula tu índice de masa corporal y recibe recomendaciones según tu resultado.</p>
+
+      <div className="toggle">
+        <button className={sistema==="metrico"?"active":""} onClick={()=>setSistema("metrico")}>kg / cm</button>
+        <button className={sistema==="imperial"?"active":""} onClick={()=>setSistema("imperial")}>lb / ft-in</button>
+      </div>
+
+      {sistema === "metrico" ? (
+        <>
+          <div className="field">
+            <label>Peso (kg)</label>
+            <input type="number" value={peso} onChange={e=>setPeso(e.target.value)} placeholder="70" />
+          </div>
+          <div className="field">
+            <label>Altura (cm)</label>
+            <input type="number" value={altura} onChange={e=>setAltura(e.target.value)} placeholder="170" />
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="field">
+            <label>Peso (lb)</label>
+            <input type="number" value={pesoLb} onChange={e=>setPesoLb(e.target.value)} placeholder="154" />
+          </div>
+          <div className="field">
+            <label>Altura</label>
+            <div className="unit-row">
+              <input type="number" value={alturaFt} onChange={e=>setAlturaFt(e.target.value)} placeholder="ft" />
+              <input type="number" value={alturaIn} onChange={e=>setAlturaIn(e.target.value)} placeholder="in" />
+            </div>
+          </div>
+        </>
+      )}
+
+      <button className="calc" onClick={calcular} disabled={cargando}>
+        {cargando ? "Calculando..." : "Calcular IMC"}
+      </button>
+
+      {error && <p style={{color:"var(--band-obese)", fontSize:"0.88rem", marginTop:"14px"}}>{error}</p>}
+
+      {resultado && (
+        <div className="result">
+          <div className="imc-value">
+            <span className="imc-num">{resultado.imc}</span>
+            <span className="imc-cat" style={{color: resultado.color}}>{resultado.cat}</span>
+          </div>
+          <div className="scale">
+            <div className="marker" style={{left: resultado.pos + "%"}}></div>
+          </div>
+          <div className="scale-labels">
+            <span>Bajo peso</span><span>Normal</span><span>Sobrepeso</span><span>Obesidad</span>
+          </div>
+          <div className="rec">
+            <h2>Recomendaciones</h2>
+            <ul>
+              {resultado.recs.map((r,i)=>(<li key={i}>{r}</li>))}
+            </ul>
+          </div>
+          <p className="disclaimer">Esta herramienta es orientativa y no reemplaza una evaluación médica profesional. El IMC no considera composición corporal, edad ni sexo.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
