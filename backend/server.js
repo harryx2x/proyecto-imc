@@ -3,6 +3,7 @@ const cors = require('cors');
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(express.static('public')); // sirve frontend/index.html en la raíz
 
 function clasificar(imc) {
   if (imc < 18.5) return "Bajo peso";

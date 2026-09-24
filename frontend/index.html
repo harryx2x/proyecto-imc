@@ -108,8 +108,8 @@ function recomendaciones(imc){
   ];
 }
 
-// Cambia esta URL por la de tu backend (IP pública de EC2, DNS del ALB, o URL de Elastic Beanstalk)
-const API_URL = "http://TU_BACKEND/api/imc";
+// Ruta relativa: funciona porque el mismo servidor Express sirve el frontend y la API
+const API_URL = "/api/imc";
 
 function App(){
   const [sistema, setSistema] = useState("metrico");
